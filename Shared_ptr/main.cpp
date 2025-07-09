@@ -1,6 +1,7 @@
 #include <utility>
 #include <gtest/gtest.h>
 #include <cstddef>
+#include <memory>
 
 template<typename T>
 class Control_block{
@@ -37,6 +38,7 @@ public:
         }
         controlptr->decr();
         if(this->getcount() == 0) {
+            std::cout << "delete" << std::endl;
             delete ptr;
             delete controlptr;
         }
@@ -54,6 +56,12 @@ public:
         controlptr->incr();
     } 
 
+    template<typename U>
+    Shared_ptr(std::unique_ptr<U> && other) {
+        ptr = other.release();
+        controlptr = new Control_block<T>(ptr);
+    }
+
     Shared_ptr& operator=(const Shared_ptr& other) {
         if(this == &other) {
             return *this;
@@ -67,9 +75,9 @@ public:
 
     Shared_ptr(Shared_ptr&& other) noexcept{
         ptr = other.ptr;
-        other.ptr = nullptr;
         controlptr = other.controlptr;
-        other.controlptr = nullptr;
+        controlptr->incr();
+        other.Deleter();
     }
 
     Shared_ptr& operator=(Shared_ptr&& other) noexcept{
@@ -79,8 +87,8 @@ public:
         this->Deleter();
         ptr = other.ptr;
         controlptr =  other.controlptr;
-        other.ptr = nullptr;
-        other.controlptr = nullptr;
+        other.controlptr->incr();
+        other.Deleter();
         return *this;
     }  
     
@@ -96,7 +104,7 @@ public:
         return ptr;
     }
 
-    size_t getcount() {
+    size_t getcount() const {
         if(controlptr) {
             return controlptr->getcount();
         }
@@ -108,14 +116,20 @@ public:
         if(p) {
             ptr = p;
             controlptr = new Control_block<T>(p);
-        }else {
-            ptr = nullptr;
-            controlptr = nullptr;
         }
     }
 
-    explicit operator bool(){
+    operator bool() const {
         return ptr?true:false;
+    }
+
+    void swap(Shared_ptr& other) noexcept {
+        std::swap(ptr, other->ptr);
+        std::swap(controlptr, other->controlptr);
+    }
+
+    bool operator==(const Shared_ptr& other) const {
+        return ptr == other.ptr;
     }
 };
 
@@ -142,7 +156,7 @@ TEST(SharedPtrTest, MoveAssignment) {
     Shared_ptr<char> ptr2;
     ptr2 = std::move(ptr1);
     EXPECT_EQ(*ptr2, 'a');
-    EXPECT_EQ(ptr1.get(), nullptr);
+    EXPECT_EQ(ptr1, false);
 }
 
 TEST(SharedPtrTest, CopyConstructor) {
@@ -160,7 +174,7 @@ TEST(SharedPtrTest, CopyAssignment) {
     EXPECT_EQ(ptr1.getcount(), 2);
 }
 
-TEST(SharedPtrTest, ResetReleasesOldObject) {
+TEST(SharedPtrTest, ResetReleaseObject) {
     Shared_ptr<double> ptr(new double(40.5));
     ptr.reset(new double(50.9));
     EXPECT_EQ(*ptr, 50.9);

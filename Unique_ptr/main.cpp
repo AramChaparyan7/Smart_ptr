@@ -27,6 +27,10 @@ public:
         other.ptr = nullptr;
         return *this;
     }  
+
+    ~Unique_ptr() {
+        delete ptr;
+    }
     
     T& operator*(){
         return *ptr;
@@ -51,7 +55,7 @@ public:
         ptr = p;
     }
 
-    explicit operator bool(){
+    operator bool(){
         return ptr?true:false;
     }
 };
@@ -59,7 +63,6 @@ public:
 int main(int argc, char** argv){
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
-    return 0;
 }
 
 TEST(UniquePtrTest, Dereference) {
