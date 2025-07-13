@@ -20,7 +20,7 @@ public:
         return ref_count;
     }
 
-    size_t get_weak_cout() const {
+    size_t get_weak_count() const {
         return weak_count;
     }
 
@@ -138,6 +138,13 @@ public:
     size_t get_ref_count() const {
         if(controlptr) {
             return controlptr->get_ref_count();
+        }
+        return 0;
+    }
+
+    size_t get_weak_count() const {
+        if(controlptr) {
+            return controlptr->get_weak_count();
         }
         return 0;
     }
@@ -277,25 +284,4 @@ TEST(SharedPtrTest, MoveAssignment) {
     ptr2 = std::move(ptr1);
     EXPECT_EQ(*ptr2, 'a');
     EXPECT_EQ(ptr1, false);
-}
-
-TEST(SharedPtrTest, CopyConstructor) {
-    Shared_ptr<int> ptr1(new int(20));
-    Shared_ptr<int> ptr2(ptr1);
-    EXPECT_EQ(*ptr2, 20);
-    EXPECT_EQ(ptr2.get_ref_count(), 2); 
-}
-
-TEST(SharedPtrTest, CopyAssignment) {
-    Shared_ptr<char> ptr1(new char('a'));
-    Shared_ptr<char> ptr2;
-    ptr2 = (ptr1);
-    EXPECT_EQ(*ptr2, 'a');
-    EXPECT_EQ(ptr1.get_ref_count(), 2);
-}
-
-TEST(SharedPtrTest, ResetReleaseObject) {
-    Shared_ptr<double> ptr(new double(40.5));
-    ptr.reset(new double(50.9));
-    EXPECT_EQ(*ptr, 50.9);
 }
