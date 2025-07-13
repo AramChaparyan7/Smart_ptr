@@ -40,7 +40,7 @@ public:
         return ptr;
     }
 
-    T* get(){
+    T* get() const{
         return ptr;
     }
 
@@ -55,8 +55,12 @@ public:
         ptr = p;
     }
 
-    operator bool(){
+    operator bool() noexcept{
         return ptr?true:false;
+    }
+
+    void swap(Unique_ptr& other) noexcept{
+        std::swap(ptr, other.ptr);
     }
 };
 
